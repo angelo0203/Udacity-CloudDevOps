@@ -114,7 +114,7 @@ Resources:
         DefaultActions:
         - Type: forward
           TargetGroupArns: 
-        - Ref: WebAppTargetGroup
+            - Ref: WebAppTargetGroup
         LoadBalancerArn: !Ref WebAppLB
         Port: '80'
         Protocol: HTTP
@@ -128,7 +128,7 @@ Resources:
         Actions:
         - Type: Forward
           TargetGroupArns: 
-        - Ref: WebAppTargetGroup
+            - Ref: WebAppTargetGroup
         Conditions:
         - Field: path-pattern
           Values: [/]
