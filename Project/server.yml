@@ -63,7 +63,8 @@ Resources:
             aws s3 cp https://angelo-udacityproject.s3-us-west-2.amazonaws.com/udacity-website.zip
             unzip -o udacity-website.zip
         ImageId: ami-06f2f779464715dc5
-        SecurityGroups: !Ref WebServerSecGroup
+        SecurityGroups: 
+        - Ref: WebServerSecGroup
         InstanceType: t2.medium
         BlockDeviceMappings:
         - DeviceName: "/dev/sdk"
@@ -112,7 +113,8 @@ Resources:
       Properties:
         DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref WebAppTargetGroup
+          TargetGroupArns: 
+        - Ref: WebAppTargetGroup
         LoadBalancerArn: !Ref WebAppLB
         Port: '80'
         Protocol: HTTP
@@ -125,7 +127,8 @@ Resources:
       Properties:
         Actions:
         - Type: Forward
-          TargetGroupArn: !Ref WebAppTargetGroup
+          TargetGroupArns: 
+        - Ref: WebAppTargetGroup
         Conditions:
         - Field: path-pattern
           Values: [/]
