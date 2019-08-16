@@ -22,10 +22,6 @@ Resources:
             FromPort: 80
             ToPort: 80
             CidrIp: 0.0.0.0/0
-          - IpProtocol: tcp
-            FromPort: 8080
-            ToPort: 8080
-            CidrIp: 0.0.0.0/0
 
   WebServerSecGroup:
        Type: AWS::EC2::SecurityGroup
@@ -36,22 +32,49 @@ Resources:
              !Sub "${EnvironmentName}-VPCID"        
          SecurityGroupIngress: 
           - IpProtocol: tcp
-            FromPort: 8080
-            ToPort: 8080
+            FromPort: 80
+            ToPort: 80
             CidrIp: 0.0.0.0/0
-          - IpProtocol: tcp
-            FromPort: 22
-            ToPort: 22
-            CidrIp: 0.0.0.0/0
+          #- IpProtocol: tcp
+            #FromPort: 22
+            #ToPort: 22
+            #CidrIp: 0.0.0.0/0
          SecurityGroupEgress: 
           - IpProtocol: tcp
             FromPort: 0
             ToPort: 65535
             CidrIp: 0.0.0.0/0
+
+
+  S3IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+       - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - 
+            Effect: 'Allow'
+            Principal:
+              Service:
+                - 'ec2.amazonaws.com'
+            Action:
+             - 'sts:AssumeRole'
+      Path: '/'
+     
+
+  S3InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+        - Ref: 'S3IAMRole'
   
   WebAppLaunchConfig:
       Type: AWS::AutoScaling::LaunchConfiguration
       Properties:
+        KeyName: udacityProject
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
@@ -59,10 +82,11 @@ Resources:
             apt-get install unzip awscli -y
             apt-get install apache2 -y
             systemctl start apache2.service
+            sudo aws s3 cp s3://udacity-demo-1/udacity.zip /var/www/html
             cd /var/www/html
-            aws s3 cp https://angelo-udacityproject.s3-us-west-2.amazonaws.com/udacity-website.zip
-            unzip -o udacity-website.zip
+            sudo unzip -o udacity.zip
         ImageId: ami-06f2f779464715dc5
+        IamInstanceProfile: !Ref S3InstanceProfile
         SecurityGroups: 
         - Ref: WebServerSecGroup
         InstanceType: t2.medium
@@ -80,7 +104,8 @@ Resources:
         LaunchConfigurationName: !Ref WebAppLaunchConfig
         MaxSize: "2"
         MinSize: "2"
-        TargetGroupARN: !Ref WebAppTargetGroup
+        TargetGroupARNs: 
+        - Ref: WebAppTargetGroup
 
   WebAppTargetGroup:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -103,7 +128,8 @@ Resources:
         Subnets:
         - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
         - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
-        SecurityGroups: !Ref 'LBSecGroup'
+        SecurityGroups: 
+        - Ref: LBSecGroup
 
   Listener:
       Type: AWS::ElasticLoadBalancingV2::Listener
@@ -113,28 +139,31 @@ Resources:
       Properties:
         DefaultActions:
         - Type: forward
-          TargetGroupArns: 
-            - Ref: WebAppTargetGroup
+          TargetGroupArn: !Ref WebAppTargetGroup
         LoadBalancerArn: !Ref WebAppLB
         Port: '80'
         Protocol: HTTP
 
   ALBListenerRule:
       Type: AWS::ElasticLoadBalancingV2::ListenerRule
-      DependsOn:
-        - Listener
-        - WebAppTargetGroup
       Properties:
         Actions:
-        - Type: Forward
-          TargetGroupArns: 
-            - Ref: WebAppTargetGroup
+        - Type: forward
+          TargetGroupArn: !Ref WebAppTargetGroup
         Conditions:
         - Field: path-pattern
           Values: [/]
         ListenerArn: !Ref Listener
         Priority: 1
 
+
+Outputs:
+  LoadBalancer:
+    Description: DNS for the LB
+    Value: 
+      !Join [ "", [ "http://", !GetAtt WebAppLB.DNSName ] ]
+    Export:
+      Name: !Sub "${EnvironmentName}-LB-DNS"
 
 
 

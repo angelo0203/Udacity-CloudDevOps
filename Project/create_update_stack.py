@@ -36,7 +36,7 @@ print(template_url)
 
  #'--template-body',templatebody
 
-cmd = 'aws cloudformation ' + action + ' --stack-name ' + stackname + ' --template-body ' + template_url + ' --parameters ' + parameters_url + ' --region ' + region
+cmd = 'aws cloudformation ' + action + ' --stack-name ' + stackname + ' --template-body ' + template_url + ' --parameters ' + parameters_url + ' --region ' + region + ' --capabilities CAPABILITY_IAM'
 
 print(cmd)
 

@@ -38,14 +38,14 @@ Resources:
          EnableDnsHostnames: true
          Tags:
             - Key: name
-              Value: !Ref EnvironmentName
+              Value: !Sub ${EnvironmentName}-VPC 
 
   InternetGateway:
        Type: AWS::EC2::InternetGateway
        Properties:
          Tags:
          - Key: name
-           Value: !Ref EnvironmentName
+           Value: !Sub ${EnvironmentName}-IGW
 
   InternetGatewayAttachment:
        Type: AWS::EC2::VPCGatewayAttachment
@@ -59,7 +59,7 @@ Resources:
          VpcId: !Ref VPC
          AvailabilityZone: !Select [ 0, !GetAZs '' ]
          CidrBlock: !Ref PublicSubnet1CIDR
-         MapPublicIpOnLaunch: false
+         MapPublicIpOnLaunch: true
          Tags: 
          - Key: Name
            Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
@@ -70,7 +70,7 @@ Resources:
          VpcId: !Ref VPC
          AvailabilityZone: !Select [ 1, !GetAZs '' ]
          CidrBlock: !Ref PublicSubnet2CIDR
-         MapPublicIpOnLaunch: false
+         MapPublicIpOnLaunch: true
          Tags: 
          - Key: Name
            Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
